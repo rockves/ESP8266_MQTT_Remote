@@ -2,16 +2,19 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <WiFiManager.h>
+#include <IRremoteESP8266.h>
+#include <IRsend.h>
 
-#define DEBUG false
+#define DEBUG true
+
+#define IR_LED_GPIO 4
 
 #define MQTT_CLIENT_NAME "ESP"
-#define MQTT_CONFIG_TOPIC "homeassistant/sensor/espT/config"
-#define MQTT_CONFIG_MESSAGE "{ \"device_class\": \"temperature\", \"name\": \"Temperature\", \"state_topic\": \"homeassistant/sensor/esp/data\", \"availability_topic\": \"homeassistant/sensor/esp/status\", \"payload_available\": \"on\", \"payload_not_available\": \"off\", \"unit_of_measurement\": \"°C\", \"value_template\": \"{{ value_json.temperature}}\" }"
-#define MQTT_STATUS_TOPIC "homeassistant/sensor/esp/status"
+#define MQTT_CONFIG_TOPIC "homeassistant/sensor/espTV/config"
+#define MQTT_CONFIG_MESSAGE "{ \"name\": \"TV\", \"availability_topic\": \"homeassistant/sensor/espTV/status\", \"payload_available\": \"on\", \"payload_not_available\": \"off\" }"
+#define MQTT_STATUS_TOPIC "homeassistant/sensor/espTV/status"
 #define MQTT_STATUS_MESSAGE_ON "on"
 #define MQTT_STATUS_MESSAGE_OFF "off"
-#define MQTT_DATA_TOPIC "homeassistant/sensor/esp/data"
 #define MQTT_WILL_TOPIC MQTT_STATUS_TOPIC
 #define MQTT_WILL_MESSAGE MQTT_STATUS_MESSAGE_OFF
 #define MQTT_SERVER_TRY_CONNECT_DELAY 2000

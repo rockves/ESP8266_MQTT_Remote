@@ -3,6 +3,7 @@
 
 WiFiClient espClient;
 PubSubClient client(espClient);
+IRsend irsend(IR_LED_GPIO);
 
 void wifi_connect(){
   WiFiManager wifiManager;
@@ -17,7 +18,7 @@ void mqtt_connect(){
     Serial.println("Connecting to MQTT...");
     #endif
     //Łączenie z serwerem MQTT
-    if (client.connect(MQTT_CLIENT_NAME + system_get_chip_id(), MQTT_USERNAME, MQTT_PASSWORD, MQTT_WILL_TOPIC, 0, true, MQTT_WILL_MESSAGE)) {
+    if (client.connect(MQTT_CLIENT_NAME, MQTT_USERNAME, MQTT_PASSWORD, MQTT_WILL_TOPIC, 0, true, MQTT_WILL_MESSAGE)) {
       client.publish(MQTT_CONFIG_TOPIC, MQTT_CONFIG_MESSAGE); //Publikacja wiadomości konfiguracyjnej (Discover)
       client.publish(MQTT_STATUS_TOPIC, MQTT_STATUS_MESSAGE_ON); //Publikacja stanu włączonego
       #if DEBUG
@@ -30,18 +31,26 @@ void mqtt_connect(){
       #endif
     }
   }
+  client.subscribe("homeassistant/sensor/esp/pioneerTV");
+  client.subscribe("homeassistant/sensor/esp/LgTV");
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
 //Odbiór wiadmości w tej funkcji
-}
-
-void send_data(){
-  String payload = ""; //Podstawowa wiadomość do której należy dodać zawartość
-  client.publish(MQTT_DATA_TOPIC, payload.c_str()); //Wysłanie wiadomości (jeśli się nie wysyła należy zwiększyć rozmiar buforu w PubSubClient.h MQTT_MAX_PACKET_SIZE na większy)
+  String message = "";
+  for(unsigned int i = 0; i < length; i++) {
+    message += (char)payload[i];
+  }
   #if DEBUG
-  Serial.println(payload);
+    Serial.println(String(topic));
+    Serial.println(message);
   #endif
+  //irsend.sendNEC(0x20DF10EF, 32, 1);
+  if(String(topic) == "homeassistant/sensor/esp/pioneerTV"){
+    irsend.sendPioneer(strtoull(message.c_str(), NULL, 16));
+  }else if(String(topic) == "homeassistant/sensor/esp/LgTV"){
+    irsend.sendNEC(strtoul(message.c_str(), NULL, 10));
+  }
 }
 
 void setup() {
@@ -50,6 +59,7 @@ void setup() {
   Serial.setDebugOutput(true);
   #endif
   pinMode(AP_ENABLE_GPIO, INPUT);
+  irsend.begin();
   wifi_connect(); //Łączenie z wifi
   #if DEBUG
   Serial.println(WiFi.localIP());
